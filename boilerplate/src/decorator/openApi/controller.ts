@@ -75,7 +75,7 @@ export type ActionMethod =
     | 'patch'
     | 'options'
     | 'head'
-    | 'all'
+    // | 'all'
 
 /**
  * 方法装饰器
@@ -106,8 +106,6 @@ const createRouterDecorator = (method: ActionMethod) => (
             }
         }
         const paramNames = getParameterNames(originalMethod)
-        // const paramTypes = Reflect.getMetadata('design:paramtypes', target, key)
-        // console.log(paramTypes)
 
         attachClassMetadata(
             openApiKey.action,
@@ -161,7 +159,7 @@ export const put = createRouterDecorator('put')
 export const patch = createRouterDecorator('patch')
 export const options = createRouterDecorator('options')
 export const head = createRouterDecorator('head')
-export const all = createRouterDecorator('all')
+// export const all = createRouterDecorator('all')
 
 /**
  * Controller 路由配置
@@ -209,7 +207,7 @@ export function controller(
         if (config.enable) {
             regController(target)
         }
-        // console.log(getClassMetadata(openApiKey.contraller, target))
+
         return controllerDecorator(prefix, routerOptions)(target)
     }
 }
