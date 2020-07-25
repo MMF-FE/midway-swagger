@@ -1,0 +1,38 @@
+{
+    "name": "midway-swagger",
+    "version": "1.0.0",
+    "author": "vfasky <vfasky@gmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MMF-FE/midway-swagger.git"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.1.7",
+        "@types/lodash": "^4.14.119",
+        "@types/mocha": "^5.2.5",
+        "@types/node": "^10.12.18",
+        "fs-extra": "^8.1.0",
+        "lerna": "^3.14.1",
+        "lerna-relinker": "^1.4.0",
+        "light-generator": "^1.1.0",
+        "midway-bin": "1",
+        "typescript": "^3.5.1"
+    },
+    "scripts": {
+        "test": "midway-bin test --timeout=120000",
+        "cov": "midway-bin cov --timeout=120000"
+    },
+    "boilerplateConfig": {
+        "root": "boilerplate",
+        "replaceParameter": "index.js",
+        "replaceFile": [
+            "_package.json",
+            "*.md",
+            "src/config/config.default.ts"
+        ]
+    },
+    "files": [
+        "boilerplate",
+        "index.js"
+    ]
+}
