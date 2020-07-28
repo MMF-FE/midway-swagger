@@ -59,7 +59,7 @@ export function getParameterNames(fn: any) {
 }
 
 export interface ActionInfo {
-    path: string
+    path: string | RegExp
     method: ActionMethod
     routerOptions: ActionRouterOption
     action: string
@@ -82,7 +82,7 @@ export type ActionMethod =
  * @param method
  */
 const createRouterDecorator = (method: ActionMethod) => (
-    path?: string,
+    path?: string | RegExp,
     routerOptions: ActionRouterOption = { 
         middleware: [],
         responses: 'any'

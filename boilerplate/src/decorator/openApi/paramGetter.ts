@@ -54,7 +54,7 @@ function FromCustom(
     options: ParamOptions = {}
 ): ParameterDecorator {
     return (target, key, index) => {
-        let paramMap: ParamMap[] = getClassMetadata(openApiKey.param, target)
+        const paramMap: ParamMap[] = getClassMetadata(openApiKey.param, target)
         let params: ParamMap
         if (!paramMap || !paramMap.length) {
             params = {}
@@ -148,7 +148,7 @@ function buildSchema(
     options: ParamOptions = {},
     name?: string
 ) {
-    let enumList: (string | number)[] = options.enum
+    let enumList: Array<string | number> = options.enum
     if (type === 'number' && enumList) {
         enumList = enumList.map(Number)
     }
@@ -285,12 +285,18 @@ export function Body(type: symbolName = 'any', options: ParamOptions = {}) {
             if (type === 'any') {
                 return val
             }
+            const isObject = !['string', 'number', 'boolean'].includes(type)
+
             if (!validate) {
-                schema = buildSchema(type, options)
+                schema = isObject
+                    ? buildSchema(type, options)
+                    : buildSchema(type, options, '_')
                 validate = ajv.compile(schema)
             }
+
+            const data = isObject ? val : { _: val }
             if (validate) {
-                if (!validate(val)) {
+                if (!validate(data)) {
                     const msg = (validate.errors || []).map((v) => v.message)
                     ctx.throw(400, `${pName}: ${msg.join(';')}`)
                 }
@@ -353,8 +359,9 @@ export function Param(
     }
     return FromCustom(
         (ctx: Context, name?: string) => {
+            console.log(ctx)
             const pName = options.name || name
-            const val = formatVal(ctx.params[pName], type)
+            const val = formatVal((ctx.params || {})[pName], type)
             if (validate) {
                 if (
                     !validate({

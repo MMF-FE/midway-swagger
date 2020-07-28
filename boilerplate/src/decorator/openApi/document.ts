@@ -276,6 +276,11 @@ function parseInterfaceParameByQuery(rule: ParamRuleInfo) {
 function parseSingleBody(name: string, rule: ParamRuleInfo) {
     const inter = getInterface(rule.type)
 
+    const schema = inter.schema
+    if (rule.options.enum) {
+        schema.enum = rule.options.enum
+    }
+
     return {
         content: {
             'application/json': {
@@ -323,8 +328,8 @@ function getActionInfo(
         [name: string]: SchemaObject
     } = {}
 ) {
-    const pathParams = parseParamsInPath(info.path)
-    const fullPath = `${ctrInfo.prefix}${replaceUrl(info.path, pathParams)}`
+    const pathParams = parseParamsInPath(String(info.path))
+    const fullPath = `${ctrInfo.prefix}${replaceUrl(String(info.path), pathParams)}`
     const parameters: OpenAPI3Parameter[] = []
     const responses = {
         default: {

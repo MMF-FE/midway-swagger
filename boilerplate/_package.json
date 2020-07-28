@@ -50,6 +50,11 @@
     ".vscode/.tsbuildinfo",
     "dist"
   ],
+  "midway-bin-build": {
+        "include": [
+          "typings"
+        ]
+  },
   "repository": {
     "type": "git",
     "url": ""

@@ -22,4 +22,5 @@ export default function(app: Application, cfg?: Config) {
         app.get(config.routerPrefix, app.generateController('openApiUi.index'))
         app.get(config.routerPrefix + '/api.json', app.generateController('openApiUi.json'))
     }
+    console.log('openAPI [ok]')
 }
