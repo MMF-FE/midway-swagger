@@ -11,6 +11,7 @@ import { ParamMap, ParamRule } from './paramGetter'
 import { config } from './config'
 import { regController } from './document'
 import symbolName from '../../typings/api/apiSymbolName'
+import { BadRequestError } from './error'
 
 // @ts-ignore
 const midway = require('midway')
@@ -121,30 +122,38 @@ const createRouterDecorator = (method: ActionMethod) => (
         )
 
         descriptor.value = async function (this: Controller, ...args: any[]) {
-            let res: any
-            // 有自定义规则
-            if (paramRule) {
-                let params: any[] = []
-                args.forEach((arg, index) => {
-                    if (paramRule[index]) {
-                        const { custom, type } = paramRule[index]
-                        const name = paramNames[index]
-                        // 返回自定义的值
-                        params.push(custom(this.ctx, name, type))
-                    } else {
-                        params.push(arg)
+            try {
+                let res: any
+                // 有自定义规则
+                if (paramRule) {
+                    let params: any[] = []
+                    args.forEach((arg, index) => {
+                        if (paramRule[index]) {
+                            const { custom, type } = paramRule[index]
+                            const name = paramNames[index]
+                            // 返回自定义的值
+                            params.push(custom(this.ctx, name, type))
+                        } else {
+                            params.push(arg)
+                        }
+                    })
+                    if (args.length === 2 && typeof args[1] === 'function') {
+                        params.push(args[1])
                     }
-                })
-                if (args.length === 2 && typeof args[1] === 'function') {
-                    params.push(args[1])
+                    res = await originalMethod.apply(this, params)
+                } else {
+                    res = await originalMethod.apply(this, args)
                 }
-                res = await originalMethod.apply(this, params)
-            } else {
-                res = await originalMethod.apply(this, args)
-            }
 
-            if (res !== undefined) {
-                this.ctx.body = res
+                if (res !== undefined) {
+                    this.ctx.body = res
+                }
+            } catch (error) {
+                if (error instanceof BadRequestError) {
+                    this.ctx.throw(400, error)
+                } else {
+                    throw error
+                }
             }
         }
 

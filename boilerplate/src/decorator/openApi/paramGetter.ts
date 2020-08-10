@@ -221,7 +221,7 @@ export function Query(
                         _: val,
                     })
                 ) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${pName}: ${msg.join(';')}`)
                 }
             }
@@ -231,6 +231,14 @@ export function Query(
         'Query',
         options
     )
+}
+
+/**
+ * 格式化错误信息
+ * @param v
+ */
+function formatErr(v: Ajv.ErrorObject) {
+    return `${v.dataPath} ${v.keyword} ${v.message}`
 }
 
 /**
@@ -248,15 +256,30 @@ export function Querys(type: symbolName, options: ParamOptions = {}) {
             if (type === 'any') {
                 return ctx.query
             }
-            const val = ctx.query
+            let val = ctx.query
+
+            if (!schema) {
+                schema = buildSchema(type, options)
+            }
+
+            // 将 query 的 string 转 number
+            if (schema.properties) {
+                Object.keys(schema.properties).forEach(key => {
+                    const s = schema.properties[key]
+                    // @ts-ignore
+                    if (s && s.type) {
+                        // @ts-ignore
+                        val[key] = formatVal(val[key], s.type)
+                    }
+                })
+            }
 
             if (!validate) {
-                schema = buildSchema(type, options)
                 validate = ajv.compile(schema)
             }
             if (validate) {
                 if (!validate(val)) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${msg.join(';')}`)
                 }
             }
@@ -297,7 +320,7 @@ export function Body(type: symbolName = 'any', options: ParamOptions = {}) {
             const data = isObject ? val : { _: val }
             if (validate) {
                 if (!validate(data)) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${pName}: ${msg.join(';')}`)
                 }
             }
@@ -331,7 +354,7 @@ export function Bodys(type: symbolName = 'any', options: ParamOptions = {}) {
             }
             if (validate) {
                 if (!validate(val)) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${msg.join(';')}`)
                 }
             }
@@ -359,7 +382,6 @@ export function Param(
     }
     return FromCustom(
         (ctx: Context, name?: string) => {
-            console.log(ctx)
             const pName = options.name || name
             const val = formatVal((ctx.params || {})[pName], type)
             if (validate) {
@@ -368,7 +390,7 @@ export function Param(
                         _: val,
                     })
                 ) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${pName}: ${msg.join(';')}`)
                 }
             }
@@ -404,7 +426,7 @@ export function Header(
                         _: val,
                     })
                 ) {
-                    const msg = (validate.errors || []).map((v) => v.message)
+                    const msg = (validate.errors || []).map(formatErr)
                     ctx.throw(400, `${pName}: ${msg.join(';')}`)
                 }
             }

@@ -258,7 +258,7 @@ function parseInterfaceParameByQuery(rule: ParamRuleInfo) {
             name,
             description: val.description,
             in: 'query',
-            required: req.required.includes(name),
+            required: (req.required || []).includes(name),
             schema: {
                 type: 'string',
                 ...val,
@@ -410,9 +410,14 @@ function getActionInfo(
         }
     })
 
+    let method: string = info.method
+    if (method === 'del') {
+        method = 'delete'
+    }
+
     return {
         [fullPath]: {
-            [info.method]: {
+            [method]: {
                 operationId: `${fullPath}:${info.method}::${info.action}`,
                 tags: [target.name],
                 summary: info.routerOptions.description || info.action,
