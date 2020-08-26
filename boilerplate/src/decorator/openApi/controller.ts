@@ -3,6 +3,13 @@ import {
     controller as controllerDecorator,
     getClassMetadata,
     attachClassMetadata,
+    get as Get,
+    post as Post,
+    put as Put,
+    del as Del,
+    patch as Patch,
+    options as Options,
+    head as Head
 } from 'midway'
 
 import { Controller } from 'egg'
@@ -13,9 +20,15 @@ import { regController } from './document'
 import symbolName from '../../typings/api/apiSymbolName'
 import { BadRequestError } from './error'
 
-// @ts-ignore
-const midway = require('midway')
-
+const midway = {
+    get: Get,
+    post: Post,
+    put: Put,
+    del: Del,
+    patch: Patch,
+    options: Options,
+    head: Head
+}
 
 type ControllerRouterBaseOption = ControllerOption['routerOptions']
 
@@ -127,16 +140,17 @@ const createRouterDecorator = (method: ActionMethod) => (
                 // 有自定义规则
                 if (paramRule) {
                     let params: any[] = []
-                    args.forEach((arg, index) => {
+
+                    const total = Object.keys(paramRule).length
+                    for(let index = 0; index < total; index++) {
                         if (paramRule[index]) {
                             const { custom, type } = paramRule[index]
                             const name = paramNames[index]
                             // 返回自定义的值
                             params.push(custom(this.ctx, name, type))
-                        } else {
-                            params.push(arg)
                         }
-                    })
+                    }
+
                     if (args.length === 2 && typeof args[1] === 'function') {
                         params.push(args[1])
                     }
@@ -157,6 +171,7 @@ const createRouterDecorator = (method: ActionMethod) => (
             }
         }
 
+        // @ts-ignore
         return midway[method](path, routerOptions)(target, key, descriptor)
     }
 }
@@ -168,7 +183,6 @@ export const put = createRouterDecorator('put')
 export const patch = createRouterDecorator('patch')
 export const options = createRouterDecorator('options')
 export const head = createRouterDecorator('head')
-// export const all = createRouterDecorator('all')
 
 /**
  * Controller 路由配置
