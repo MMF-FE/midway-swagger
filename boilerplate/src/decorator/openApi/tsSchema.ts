@@ -33,14 +33,17 @@ export function init(rootPath: string) {
 
 export function genCode(rootPath: string) {
     if (tsSchema) {
+        
         const types = tsSchema
             .getUserSymbols()
             .filter((v) => v.startsWith('API.'))
             .concat(['number', 'boolean', 'string', 'any'])
-            .map((v) => `'${v}'`)
+            // .map((v) => `'${v}'`)
 
         const code = `type symbolName =
-    | ${types.join(`
+    | ${types.map((v) => `'${v}'`).join(`
+    | `)}
+    | ${types.map((v) => `'${v}[]'`).join(`
     | `)}
 
 export default symbolName`
@@ -75,6 +78,7 @@ export function getSchemaObject(name: symbolName) {
                 {}) as SchemaObject
     }
 
+
     return schema
 }
 
@@ -84,6 +88,20 @@ export default function get(name: symbolName) {
             schema: {},
             components: {},
         }
+    }
+    if (name.endsWith('[]')) {
+        const sName = name.replace('[]', '') as symbolName
+        const res = get(sName)
+
+        return {
+            schema: {
+                type: 'array',
+                items: res.schema
+            },
+            components: res.components
+        }
+
+
     }
 
     const schema = getSchemaObject(name)
@@ -104,6 +122,7 @@ export default function get(name: symbolName) {
                     /#\/components\/schemas\/API./g,
                     '#/components/schemas/'
                 )
+                
         )
         delete schema.definitions
 
@@ -114,7 +133,7 @@ export default function get(name: symbolName) {
         let schemaData = JSON.parse(data)
 
         if (schemaData.type === 'object') {
-            const typeName = name.replace('API.', '')
+            const typeName = name.replace('API.', '').replace(/\./g, '')
             components[typeName] = schemaData
             schemaData = {
                 $ref: `#/components/schemas/${typeName}`,
@@ -123,8 +142,20 @@ export default function get(name: symbolName) {
 
         Object.keys(components).forEach((key) => {
             if (key.indexOf('API.') === 0) {
-                const newKey = key.replace('API.', '')
-                components[newKey] = components[key]
+                const newKey = key.replace('API.', '').replace(/\./g, '')
+                const component = components[key]
+                if (component.type === 'object' && component.properties) {
+                    Object.keys(component.properties).forEach(k => {
+                        const props = component.properties[k]
+                        // @ts-ignore
+                        if (props.type === 'array' && props.items && typeof props.items.$ref === 'string') {
+                            // @ts-ignore
+                            props.items.$ref = String(props.items.$ref).replace(/\./g, '')
+                        }
+                    })
+                }
+                
+                components[newKey] = component
                 delete components[key]
             }
         })
@@ -134,10 +165,11 @@ export default function get(name: symbolName) {
             components,
         }
     } else if (name.startsWith('API.')) {
-        const schemaName = name.replace('API.', '')
+        const schemaName = name.replace('API.', '').replace(/\./g, '')
         const refName = `#/components/schemas/${schemaName}`
 
         components[schemaName] = schema
+
 
         return {
             schema: {

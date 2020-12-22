@@ -24,7 +24,7 @@ let _config = {
     /**
      * swagger ui version
      */
-    swaggerUiVersion: '3.30.2'
+    swaggerUiVersion: '3.35.1'
 }
 
 export interface Config {

@@ -9,7 +9,7 @@ import {
     OpenAPI3Paths,
     OpenAPI3Parameter,
     OpenAPI3Content,
-    InType
+    InType,
 } from './types'
 import { SchemaObject } from 'openapi3-ts'
 import { ParamRuleInfo } from './paramGetter'
@@ -27,9 +27,9 @@ export function regController(target: any) {
 }
 
 export interface SecuritySchemes {
-    [name: string] : {
+    [name: string]: {
         type: string
-        in: InType,
+        in: InType
         name: string
     }
 }
@@ -41,7 +41,7 @@ const _docConfig = {
     title: '',
     description: '',
     version: '1.0.0',
-    securitySchemes: {} as SecuritySchemes
+    securitySchemes: {} as SecuritySchemes,
 }
 
 /**
@@ -54,7 +54,7 @@ export function getDocConfig() {
 /**
  * 配置文档
  */
-export default function() {
+export default function () {
     return {
         /**
          * 设置文档标题
@@ -66,7 +66,7 @@ export default function() {
         },
         /**
          * 设置描述
-         * @param desc 
+         * @param desc
          */
         setDescription(desc: string) {
             _docConfig.description = desc
@@ -74,7 +74,7 @@ export default function() {
         },
         /**
          * 设备版本
-         * @param version 
+         * @param version
          */
         setVersion(version: string) {
             _docConfig.version = version
@@ -93,7 +93,7 @@ export default function() {
          */
         build() {
             return builder()
-        }
+        },
     }
 }
 
@@ -105,13 +105,13 @@ export function builder() {
         info: {
             title: _docConfig.title,
             description: _docConfig.description,
-            version: _docConfig.version
+            version: _docConfig.version,
         },
         openapi: '3.0.0',
         paths: {},
         components: {
             schemas: {},
-            securitySchemes: _docConfig.securitySchemes
+            securitySchemes: _docConfig.securitySchemes,
         },
         tags: [],
     } as OpenAPI3
@@ -146,14 +146,44 @@ export function builder() {
         }
     }
 
+    Object.keys(openApi.components.schemas).forEach((key) => {
+        const component = openApi.components.schemas[key]
+        // @ts-ignore
+        if (component.type === 'object' && component.properties) {
+            // @ts-ignore
+            Object.keys(component.properties).forEach((k) => {
+                // @ts-ignore
+                const props = component.properties[k]
+                
+                // @ts-ignore
+                if (
+                    props.type === 'array' &&
+                    props.items &&
+                    typeof props.items.$ref === 'string'
+                ) {
+                    // @ts-ignore
+                    props.items.$ref = String(props.items.$ref).replace(
+                        /\./g,
+                        ''
+                    )
+                } else if (props.$ref) {
+                    props.$ref = String(props.$ref).replace(
+                        /\./g,
+                        ''
+                    )
+                }
+            })
+        }
+    })
+
     return openApi
 }
 
 /**
  * 取 contraller 配置
- * @param target 
- * @param info 
- * @param components 
+ * @param target
+ * @param info
+ * @param components
  */
 function getContrallerInfo(
     target: any,
@@ -315,10 +345,10 @@ function parseBody(rule: ParamRuleInfo) {
 
 /**
  * 取 action 的 open api 信息
- * @param target 
- * @param info 
- * @param ctrInfo 
- * @param components 
+ * @param target
+ * @param info
+ * @param ctrInfo
+ * @param components
  */
 function getActionInfo(
     target: any,
@@ -329,7 +359,10 @@ function getActionInfo(
     } = {}
 ) {
     const pathParams = parseParamsInPath(String(info.path))
-    const fullPath = `${ctrInfo.prefix}${replaceUrl(String(info.path), pathParams)}`
+    const fullPath = `${ctrInfo.prefix}${replaceUrl(
+        String(info.path),
+        pathParams
+    )}`
     const parameters: OpenAPI3Parameter[] = []
     const responses = {
         default: {
@@ -344,9 +377,9 @@ function getActionInfo(
 
     const security: {
         [name: string]: string[]
-    }[] = Object.keys(_docConfig.securitySchemes).map(v => {
+    }[] = Object.keys(_docConfig.securitySchemes).map((v) => {
         return {
-            [v]: []
+            [v]: [],
         }
     })
     let requestBody = {
@@ -358,7 +391,7 @@ function getActionInfo(
     // 处理 res
     const res = getInterface(responsesType)
     responses.default.content['application/json'].schema = res.schema
-    Object.keys(res.components).forEach(key => {
+    Object.keys(res.components).forEach((key) => {
         components[key] = res.components[key]
     })
 
@@ -396,6 +429,7 @@ function getActionInfo(
                         ...res.content[type].schema.properties,
                     }
                 }
+               
             })
 
             Object.keys(res.components).forEach((key) => {
@@ -404,7 +438,7 @@ function getActionInfo(
         } else if (rule.source === 'Bodys') {
             const res = parseBody(rule)
             requestBody.content = res.content
-            Object.keys(res.components).forEach(key => {
+            Object.keys(res.components).forEach((key) => {
                 components[key] = res.components[key]
             })
         }
@@ -422,9 +456,11 @@ function getActionInfo(
                 tags: [target.name],
                 summary: info.routerOptions.description || info.action,
                 parameters,
-                requestBody,
+                requestBody: ['get', 'delete'].includes(method)
+                    ? undefined
+                    : requestBody,
                 responses,
-                security: security.length ? security : undefined
+                security: security.length ? security : undefined,
             },
         },
     } as OpenAPI3Paths

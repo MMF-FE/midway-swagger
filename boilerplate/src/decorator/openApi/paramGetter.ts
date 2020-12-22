@@ -264,12 +264,28 @@ export function Querys(type: symbolName, options: ParamOptions = {}) {
 
             // 将 query 的 string 转 number
             if (schema.properties) {
-                Object.keys(schema.properties).forEach(key => {
+                Object.keys(schema.properties).forEach((key) => {
                     const s = schema.properties[key]
                     // @ts-ignore
                     if (s && s.type) {
                         // @ts-ignore
-                        val[key] = formatVal(val[key], s.type)
+                        if (s.type !== 'array') {
+                            // @ts-ignore
+                            val[key] = formatVal(val[key], s.type)
+                        } else {
+                            const queries = ctx.queries
+                            val[key] =
+                                Array.isArray(queries[key]) &&
+                                // @ts-ignore
+                                s.items &&
+                                // @ts-ignore
+                                s.items.type
+                                    ? queries[key].map((v) =>
+                                          // @ts-ignore
+                                          formatVal(v, s.items.type)
+                                      )
+                                    : queries[key]
+                        }
                     }
                 })
             }
